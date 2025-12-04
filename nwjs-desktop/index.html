@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Airavoto Gaming POS</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0a0a0a;
+    }
+    #loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      color: white;
+      font-family: system-ui, -apple-system, sans-serif;
+      z-index: 9999;
+    }
+    #loading h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      background: linear-gradient(90deg, #a855f7, #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    #loading p {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 1rem;
+    }
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 3px solid rgba(168, 85, 247, 0.3);
+      border-top-color: #a855f7;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 2rem 0;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="loading">
+    <h1>Airavoto Gaming</h1>
+    <div class="spinner"></div>
+    <p>Starting local server...</p>
+  </div>
+  
+  <iframe id="app" style="display: none;"></iframe>
+
+  <script>
+    const SERVER_PORT = 5000;
+    const MAX_RETRIES = 30;
+    const RETRY_INTERVAL = 1000;
+    
+    let retries = 0;
+    
+    function checkServer() {
+      fetch(`http://localhost:${SERVER_PORT}/api/health`)
+        .then(response => {
+          if (response.ok) {
+            document.getElementById('loading').style.display = 'none';
+            const iframe = document.getElementById('app');
+            iframe.style.display = 'block';
+            iframe.src = `http://localhost:${SERVER_PORT}`;
+          } else {
+            retry();
+          }
+        })
+        .catch(() => {
+          retry();
+        });
+    }
+    
+    function retry() {
+      retries++;
+      if (retries < MAX_RETRIES) {
+        document.querySelector('#loading p').textContent = 
+          `Starting local server... (${retries}/${MAX_RETRIES})`;
+        setTimeout(checkServer, RETRY_INTERVAL);
+      } else {
+        document.querySelector('#loading p').textContent = 
+          'Failed to start server. Please restart the application.';
+        document.querySelector('.spinner').style.display = 'none';
+      }
+    }
+    
+    setTimeout(checkServer, 2000);
+  </script>
+</body>
+</html>
