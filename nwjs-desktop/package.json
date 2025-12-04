@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Airavoto Gaming - Gaming Lounge Management POS System",
   "main": "index.html",
-  "node-main": "server/index.js",
+  "node-main": "server/dist/index.js",
   "window": {
     "title": "Airavoto Gaming POS",
     "width": 1400,
@@ -18,11 +18,13 @@
   },
   "chromium-args": "--disable-raf-throttling --enable-gpu-rasterization",
   "scripts": {
-    "dev": "npm run build:server && nw .",
-    "build:server": "tsc -p tsconfig.server.json",
-    "build:client": "vite build",
+    "dev": "npx tsx server/index.ts",
+    "dev:nw": "npm run build:server && nw .",
+    "build:server": "npx tsc -p tsconfig.server.json",
+    "build:client": "npx vite build",
     "build": "npm run build:server && npm run build:client",
     "start": "nw .",
+    "start:node": "node server/dist/index.js",
     "package:win": "nwbuild -p win64 -o ./dist .",
     "package:mac": "nwbuild -p osx64 -o ./dist .",
     "package:linux": "nwbuild -p linux64 -o ./dist ."
@@ -97,6 +99,7 @@
     "nw-builder": "^4.10.5",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.17",
+    "tsx": "^4.19.2",
     "typescript": "5.6.3",
     "vite": "^5.4.20"
   },
