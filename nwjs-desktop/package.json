@@ -1,9 +1,9 @@
 {
   "name": "airavoto-gaming-pos",
   "version": "1.0.0",
-  "description": "Airavoto Gaming - Gaming Lounge Management POS System",
+  "description": "Airavoto Gaming - Gaming Lounge Management POS (Offline Desktop)",
   "main": "index.html",
-  "node-main": "server/dist/index.js",
+  "node-main": "start-server.js",
   "window": {
     "title": "Airavoto Gaming POS",
     "width": 1400,
@@ -14,17 +14,19 @@
     "position": "center",
     "toolbar": false,
     "frame": true,
-    "resizable": true
+    "resizable": true,
+    "show": false
   },
-  "chromium-args": "--disable-raf-throttling --enable-gpu-rasterization",
+  "chromium-args": "--disable-raf-throttling --enable-gpu-rasterization --disable-web-security",
+  "node-remote": "*",
   "scripts": {
-    "dev": "npx tsx server/index.ts",
+    "dev": "DESKTOP=1 npx tsx server/index.ts",
     "dev:nw": "npm run build:server && nw .",
     "build:server": "npx tsc -p tsconfig.server.json",
     "build:client": "npx vite build",
     "build": "npm run build:server && npm run build:client",
     "start": "nw .",
-    "start:node": "node server/dist/index.js",
+    "start:node": "DESKTOP=1 node server/dist/index.js",
     "package:win": "nwbuild -p win64 -o ./dist .",
     "package:mac": "nwbuild -p osx64 -o ./dist .",
     "package:linux": "nwbuild -p linux64 -o ./dist ."

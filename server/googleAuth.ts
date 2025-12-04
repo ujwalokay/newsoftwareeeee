@@ -4,25 +4,39 @@ import session from "express-session";
 import type { Express, RequestHandler } from "express";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
+import { isDesktop } from "./db";
+import { createSQLiteSessionStore } from "./session-sqlite";
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
-  const pgStore = connectPg(session);
-  const sessionStore = new pgStore({
-    conString: process.env.DATABASE_URL,
-    createTableIfMissing: false,
-    ttl: sessionTtl,
-    tableName: "sessions",
-  });
+  
+  let sessionStore: session.Store;
+  
+  if (isDesktop) {
+    console.log('[Session] Using SQLite session store (desktop mode)');
+    sessionStore = createSQLiteSessionStore();
+  } else {
+    console.log('[Session] Using PostgreSQL session store (web mode)');
+    const pgStore = connectPg(session);
+    sessionStore = new pgStore({
+      conString: process.env.DATABASE_URL,
+      createTableIfMissing: false,
+      ttl: sessionTtl,
+      tableName: "sessions",
+    });
+  }
+  
+  const sessionSecret = process.env.SESSION_SECRET || 'airavoto-gaming-pos-desktop-secret-key';
+  
   return session({
-    secret: process.env.SESSION_SECRET!,
+    secret: sessionSecret,
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax", // CSRF protection (lax required for OAuth flows)
+      secure: !isDesktop && process.env.NODE_ENV === "production",
+      sameSite: "lax",
       maxAge: sessionTtl,
     },
   });
