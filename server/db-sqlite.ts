@@ -1,31 +1,34 @@
-import { Pool } from 'pg';
 import Database from 'better-sqlite3';
-import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
-import { drizzle as drizzleSqlite, BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
-import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import * as pgSchema from "@shared/schema";
-import * as sqliteSchema from "@shared/schema-sqlite";
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+import * as schema from "@shared/schema-sqlite";
 import path from 'path';
 import fs from 'fs';
 
-export const isDesktop = process.env.DESKTOP === '1' || process.env.NWJS === '1';
-export type DbType = 'postgres' | 'sqlite';
-export const dbType: DbType = isDesktop ? 'sqlite' : 'postgres';
+const isDesktop = process.env.DESKTOP === '1' || process.env.NWJS === '1';
 
-let pool: Pool | null = null;
-let sqlite: Database.Database | null = null;
-
-function getSqliteDbPath(): string {
-  const userDataPath = process.env.NWJS_USER_DATA || process.cwd();
-  const dbDir = path.join(userDataPath, 'data');
-  if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
+function getDbPath(): string {
+  if (isDesktop) {
+    const userDataPath = process.env.NWJS_USER_DATA || process.cwd();
+    const dbDir = path.join(userDataPath, 'data');
+    if (!fs.existsSync(dbDir)) {
+      fs.mkdirSync(dbDir, { recursive: true });
+    }
+    return path.join(dbDir, 'gaming-pos.db');
   }
-  return path.join(dbDir, 'gaming-pos.db');
+  return path.join(process.cwd(), 'gaming-pos.db');
 }
 
-function initializeSqliteSchema(sqliteDb: Database.Database) {
-  sqliteDb.exec(`
+const dbPath = getDbPath();
+console.log(`SQLite database path: ${dbPath}`);
+
+export const sqlite = new Database(dbPath);
+sqlite.pragma('journal_mode = WAL');
+sqlite.pragma('foreign_keys = ON');
+
+export const db = drizzle(sqlite, { schema });
+
+export function initializeSqliteSchema() {
+  sqlite.exec(`
     CREATE TABLE IF NOT EXISTS sessions (
       sid TEXT PRIMARY KEY,
       sess TEXT NOT NULL,
@@ -311,55 +314,10 @@ function initializeSqliteSchema(sqliteDb: Database.Database) {
       created_at INTEGER NOT NULL
     );
   `);
-  console.log('[Database] SQLite schema initialized');
+  
+  console.log('SQLite schema initialized');
 }
 
-function createPostgresDb(): NodePgDatabase<typeof pgSchema> {
-  if (!process.env.DATABASE_URL) {
-    throw new Error("DATABASE_URL must be set for PostgreSQL mode.");
-  }
-  
-  pool = new Pool({ 
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 5000,
-  });
-  
-  return drizzlePg(pool, { schema: pgSchema });
+export function closeSqlite() {
+  sqlite.close();
 }
-
-function createSqliteDb(): BetterSQLite3Database<typeof sqliteSchema> {
-  const dbPath = getSqliteDbPath();
-  console.log(`[Database] SQLite database path: ${dbPath}`);
-  
-  sqlite = new Database(dbPath);
-  sqlite.pragma('journal_mode = WAL');
-  sqlite.pragma('foreign_keys = ON');
-  
-  initializeSqliteSchema(sqlite);
-  
-  return drizzleSqlite(sqlite, { schema: sqliteSchema });
-}
-
-console.log(`[Database] Mode: ${dbType.toUpperCase()}`);
-
-export const db = isDesktop ? createSqliteDb() : createPostgresDb();
-
-export { pool };
-
-export function getSqliteDb(): Database.Database | null {
-  return sqlite;
-}
-
-export function closeDatabase() {
-  if (pool) {
-    pool.end();
-  }
-  if (sqlite) {
-    sqlite.close();
-  }
-}
-
-export const schema = isDesktop ? sqliteSchema : pgSchema;
