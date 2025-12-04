@@ -852,8 +852,16 @@ export function registerRoutes(app: express.Express) {
   // ==================== PRICING CONFIG ====================
   app.get("/api/pricing-config", requireAuth, (req: Request, res: Response) => {
     try {
-      const configs = sqlite.prepare('SELECT * FROM pricing_configs').all();
-      res.json(configs);
+      const configs = sqlite.prepare('SELECT * FROM pricing_configs').all() as any[];
+      // Map snake_case to camelCase for frontend compatibility
+      const mapped = configs.map(c => ({
+        id: c.id,
+        category: c.category,
+        duration: c.duration,
+        price: c.price,
+        personCount: c.person_count
+      }));
+      res.json(mapped);
     } catch (error) {
       console.error("Error fetching pricing configs:", error);
       res.status(500).json({ message: "Failed to fetch pricing configs" });
@@ -874,8 +882,16 @@ export function registerRoutes(app: express.Express) {
         `).run(id, category, config.duration, config.price, config.personCount || 1);
       }
       
-      const updatedConfigs = sqlite.prepare('SELECT * FROM pricing_configs WHERE category = ?').all(category);
-      res.json(updatedConfigs);
+      const updatedConfigs = sqlite.prepare('SELECT * FROM pricing_configs WHERE category = ?').all(category) as any[];
+      // Map snake_case to camelCase for frontend compatibility
+      const mapped = updatedConfigs.map(c => ({
+        id: c.id,
+        category: c.category,
+        duration: c.duration,
+        price: c.price,
+        personCount: c.person_count
+      }));
+      res.json(mapped);
     } catch (error) {
       console.error("Error updating pricing configs:", error);
       res.status(500).json({ message: "Failed to update pricing configs" });
@@ -895,8 +911,16 @@ export function registerRoutes(app: express.Express) {
   // ==================== HAPPY HOURS ====================
   app.get("/api/happy-hours-config", requireAuth, (req: Request, res: Response) => {
     try {
-      const configs = sqlite.prepare('SELECT * FROM happy_hours_configs').all();
-      res.json(configs);
+      const configs = sqlite.prepare('SELECT * FROM happy_hours_configs').all() as any[];
+      // Map snake_case to camelCase for frontend compatibility
+      const mapped = configs.map(c => ({
+        id: c.id,
+        category: c.category,
+        startTime: c.start_time,
+        endTime: c.end_time,
+        enabled: Boolean(c.enabled)
+      }));
+      res.json(mapped);
     } catch (error) {
       console.error("Error fetching happy hours configs:", error);
       res.status(500).json({ message: "Failed to fetch happy hours configs" });
@@ -922,8 +946,16 @@ export function registerRoutes(app: express.Express) {
         `).run(id, category, config.startTime, config.endTime, config.enabled ? 1 : 0);
       }
       
-      const updatedConfigs = sqlite.prepare('SELECT * FROM happy_hours_configs WHERE category = ?').all(category);
-      res.json(updatedConfigs);
+      const updatedConfigs = sqlite.prepare('SELECT * FROM happy_hours_configs WHERE category = ?').all(category) as any[];
+      // Map snake_case to camelCase for frontend compatibility
+      const mapped = updatedConfigs.map(c => ({
+        id: c.id,
+        category: c.category,
+        startTime: c.start_time,
+        endTime: c.end_time,
+        enabled: Boolean(c.enabled)
+      }));
+      res.json(mapped);
     } catch (error) {
       console.error("Error updating happy hours configs:", error);
       res.status(500).json({ message: "Failed to update happy hours configs" });
@@ -942,8 +974,16 @@ export function registerRoutes(app: express.Express) {
   
   app.get("/api/happy-hours-pricing", requireAuth, (req: Request, res: Response) => {
     try {
-      const pricing = sqlite.prepare('SELECT * FROM happy_hours_pricing').all();
-      res.json(pricing);
+      const pricing = sqlite.prepare('SELECT * FROM happy_hours_pricing').all() as any[];
+      // Map snake_case to camelCase for frontend compatibility
+      const mapped = pricing.map(p => ({
+        id: p.id,
+        category: p.category,
+        duration: p.duration,
+        price: p.price,
+        personCount: p.person_count
+      }));
+      res.json(mapped);
     } catch (error) {
       console.error("Error fetching happy hours pricing:", error);
       res.status(500).json({ message: "Failed to fetch happy hours pricing" });
@@ -969,8 +1009,16 @@ export function registerRoutes(app: express.Express) {
         `).run(id, category, config.duration, config.price, config.personCount || 1);
       }
       
-      const updatedPricing = sqlite.prepare('SELECT * FROM happy_hours_pricing WHERE category = ?').all(category);
-      res.json(updatedPricing);
+      const updatedPricing = sqlite.prepare('SELECT * FROM happy_hours_pricing WHERE category = ?').all(category) as any[];
+      // Map snake_case to camelCase for frontend compatibility
+      const mapped = updatedPricing.map(p => ({
+        id: p.id,
+        category: p.category,
+        duration: p.duration,
+        price: p.price,
+        personCount: p.person_count
+      }));
+      res.json(mapped);
     } catch (error) {
       console.error("Error updating happy hours pricing:", error);
       res.status(500).json({ message: "Failed to update happy hours pricing" });
