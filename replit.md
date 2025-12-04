@@ -101,10 +101,38 @@ Preferred communication style: Simple, everyday language.
 - **Enhanced Credit Balances Display**: Credit Balances table now shows comprehensive booking details for better context.
 - **Booking & Group Code System**: Unique booking codes (BK-XXXXX) for each booking and group codes (GRP-XXXXX) for linking multiple related bookings (e.g., PC 1, 2, 3 for the same table/session). Codes persist through booking creation to history archival.
 
+## Desktop Mode (NW.js)
+
+### Offline Desktop Application
+The application supports running as a standalone offline desktop application using NW.js with SQLite database.
+
+**Desktop Mode Features:**
+- **Local SQLite Database**: All data stored locally in `data/gaming-pos.db`
+- **Offline Operation**: No internet required after initial setup
+- **Default Admin User**: Username: `admin`, Password: `admin123` (auto-created in desktop mode)
+- **Session Persistence**: SQLite-based session store
+
+**Building Desktop App:**
+1. Navigate to `nwjs-desktop/` folder
+2. Run `npm install` to install dependencies
+3. Run `npm run build` to build both server and client
+4. Run `npm start` to launch the NW.js application
+5. Run `npm run package:win` / `package:mac` / `package:linux` for distribution builds
+
+**Environment Variables for Desktop:**
+- `DESKTOP=1` or `NWJS=1` - Enables desktop/SQLite mode
+- `PORT=5000` - Server port (default)
+
+### Dual-Mode Architecture
+- **Web Mode**: Uses PostgreSQL (Neon) + PostgreSQL session store
+- **Desktop Mode**: Uses SQLite + SQLite session store
+- Mode automatically detected via environment variables
+
 ## External Dependencies
 
 ### Database
-- **Neon PostgreSQL**: Serverless PostgreSQL database.
+- **Neon PostgreSQL**: Serverless PostgreSQL database (web mode).
+- **SQLite (better-sqlite3)**: Local database for desktop mode.
 
 ### UI Component Libraries
 - **Radix UI**: Accessible React primitives.

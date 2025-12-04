@@ -322,8 +322,9 @@ export class DatabaseStorage implements IStorage {
 
     // Initialize default users if no users exist
     if (existingUsers.length === 0) {
-      const adminUsername = process.env.ADMIN_USERNAME;
-      const adminPassword = process.env.ADMIN_PASSWORD;
+      const isDesktopMode = process.env.DESKTOP === '1' || process.env.NWJS === '1';
+      const adminUsername = process.env.ADMIN_USERNAME || (isDesktopMode ? 'admin' : undefined);
+      const adminPassword = process.env.ADMIN_PASSWORD || (isDesktopMode ? 'admin123' : undefined);
       const staffUsername = process.env.STAFF_USERNAME;
       const staffPassword = process.env.STAFF_PASSWORD;
       
@@ -332,6 +333,10 @@ export class DatabaseStorage implements IStorage {
         console.error('❌ Please set ADMIN_USERNAME and ADMIN_PASSWORD to create an admin user.');
         console.error('❌ The application will continue without users.');
         return;
+      }
+      
+      if (isDesktopMode) {
+        console.log('📱 Desktop mode detected - creating default admin user');
       }
       
       if (adminPassword.length < 8) {
