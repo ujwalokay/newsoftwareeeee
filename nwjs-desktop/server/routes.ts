@@ -902,6 +902,43 @@ export function registerRoutes(app: express.Express) {
       res.status(500).json({ message: "Failed to fetch happy hours configs" });
     }
   });
+
+  app.post("/api/happy-hours-config", requireAdmin, (req: Request, res: Response) => {
+    try {
+      const { category, configs } = req.body;
+      if (!category || !Array.isArray(configs)) {
+        return res.status(400).json({ message: "Invalid request format" });
+      }
+      
+      // Delete existing configs for this category
+      sqlite.prepare('DELETE FROM happy_hours_configs WHERE category = ?').run(category);
+      
+      // Insert new configs
+      for (const config of configs) {
+        const id = crypto.randomUUID();
+        sqlite.prepare(`
+          INSERT INTO happy_hours_configs (id, category, start_time, end_time, enabled)
+          VALUES (?, ?, ?, ?, ?)
+        `).run(id, category, config.startTime, config.endTime, config.enabled ? 1 : 0);
+      }
+      
+      const updatedConfigs = sqlite.prepare('SELECT * FROM happy_hours_configs WHERE category = ?').all(category);
+      res.json(updatedConfigs);
+    } catch (error) {
+      console.error("Error updating happy hours configs:", error);
+      res.status(500).json({ message: "Failed to update happy hours configs" });
+    }
+  });
+
+  app.delete("/api/happy-hours-config/:category", requireAdmin, (req: Request, res: Response) => {
+    try {
+      const { category } = req.params;
+      sqlite.prepare('DELETE FROM happy_hours_configs WHERE category = ?').run(category);
+      res.json({ success: true, message: `Deleted happy hours config for ${category}` });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
   
   app.get("/api/happy-hours-pricing", requireAuth, (req: Request, res: Response) => {
     try {
@@ -910,6 +947,43 @@ export function registerRoutes(app: express.Express) {
     } catch (error) {
       console.error("Error fetching happy hours pricing:", error);
       res.status(500).json({ message: "Failed to fetch happy hours pricing" });
+    }
+  });
+
+  app.post("/api/happy-hours-pricing", requireAdmin, (req: Request, res: Response) => {
+    try {
+      const { category, configs } = req.body;
+      if (!category || !Array.isArray(configs)) {
+        return res.status(400).json({ message: "Invalid request format" });
+      }
+      
+      // Delete existing pricing for this category
+      sqlite.prepare('DELETE FROM happy_hours_pricing WHERE category = ?').run(category);
+      
+      // Insert new pricing
+      for (const config of configs) {
+        const id = crypto.randomUUID();
+        sqlite.prepare(`
+          INSERT INTO happy_hours_pricing (id, category, duration, price, person_count)
+          VALUES (?, ?, ?, ?, ?)
+        `).run(id, category, config.duration, config.price, config.personCount || 1);
+      }
+      
+      const updatedPricing = sqlite.prepare('SELECT * FROM happy_hours_pricing WHERE category = ?').all(category);
+      res.json(updatedPricing);
+    } catch (error) {
+      console.error("Error updating happy hours pricing:", error);
+      res.status(500).json({ message: "Failed to update happy hours pricing" });
+    }
+  });
+
+  app.delete("/api/happy-hours-pricing/:category", requireAdmin, (req: Request, res: Response) => {
+    try {
+      const { category } = req.params;
+      sqlite.prepare('DELETE FROM happy_hours_pricing WHERE category = ?').run(category);
+      res.json({ success: true, message: `Deleted happy hours pricing for ${category}` });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
     }
   });
 
