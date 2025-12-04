@@ -250,6 +250,12 @@ export function AddBookingDialog({ open, onOpenChange, onConfirm, availableSeats
     if (!slot) return null;
 
     let basePrice = parseFloat(slot.price.toString());
+    
+    // Apply manual discount percentage
+    if (manualDiscountPercentage && parseFloat(manualDiscountPercentage) > 0) {
+      const discountAmount = (basePrice * parseFloat(manualDiscountPercentage)) / 100;
+      basePrice = basePrice - discountAmount;
+    }
 
     return Math.round(basePrice).toString();
   };
