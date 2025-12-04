@@ -1291,6 +1291,11 @@ export function registerRoutes(app: express.Express) {
       }));
 
       const predictions: any[] = [];
+      let highRiskCount = 0;
+      let mediumRiskCount = 0;
+      let lowRiskCount = 0;
+      const recommendedActions: string[] = [];
+
       for (const config of deviceConfigs) {
         for (const seatName of config.seats) {
           const device = maintenance.find(m => m.seat_name === seatName) || {
@@ -1299,39 +1304,70 @@ export function registerRoutes(app: express.Express) {
             total_usage_hours: 0,
             total_sessions: 0,
             issues_reported: 0,
-            status: 'healthy'
+            status: 'healthy',
+            last_maintenance_date: null
           };
 
           // Simple prediction based on usage
           const usageHours = device.total_usage_hours || 0;
+          const totalSessions = device.total_sessions || 0;
           const issuesReported = device.issues_reported || 0;
+          const daysSinceLastMaintenance = device.last_maintenance_date 
+            ? Math.floor((Date.now() - device.last_maintenance_date) / (1000 * 60 * 60 * 24))
+            : null;
           
-          let healthScore = 100;
-          let maintenanceNeeded = false;
-          let predictedIssue: string | null = null;
+          // Calculate risk level
+          let riskLevel: "low" | "medium" | "high" = "low";
+          let recommendedAction = "No action needed";
+          let estimatedDaysUntilMaintenance = 90;
+          let reasoning = "Device is operating normally with low usage.";
 
-          if (usageHours > 500) healthScore -= 20;
-          if (usageHours > 1000) healthScore -= 30;
-          if (issuesReported > 3) healthScore -= 25;
-          
-          if (healthScore < 60) {
-            maintenanceNeeded = true;
-            predictedIssue = usageHours > 800 ? 'Recommended maintenance check' : 'Monitor for issues';
+          if (usageHours > 1000 || issuesReported > 5) {
+            riskLevel = "high";
+            highRiskCount++;
+            recommendedAction = "Schedule immediate maintenance check";
+            estimatedDaysUntilMaintenance = 7;
+            reasoning = `High usage (${usageHours}h) and/or multiple issues reported (${issuesReported}). Immediate attention recommended.`;
+            if (!recommendedActions.includes(recommendedAction)) recommendedActions.push(recommendedAction);
+          } else if (usageHours > 500 || issuesReported > 2) {
+            riskLevel = "medium";
+            mediumRiskCount++;
+            recommendedAction = "Plan maintenance within 2 weeks";
+            estimatedDaysUntilMaintenance = 14;
+            reasoning = `Moderate usage (${usageHours}h) with some issues. Preventive maintenance recommended.`;
+            if (!recommendedActions.includes(recommendedAction)) recommendedActions.push(recommendedAction);
+          } else {
+            lowRiskCount++;
           }
 
           predictions.push({
             category: config.category,
             seatName,
-            healthScore: Math.max(0, healthScore),
-            maintenanceNeeded,
-            predictedIssue,
-            usageHours,
-            issuesReported
+            riskLevel,
+            recommendedAction,
+            estimatedDaysUntilMaintenance,
+            reasoning,
+            metrics: {
+              usageHours,
+              totalSessions,
+              issuesReported,
+              daysSinceLastMaintenance
+            }
           });
         }
       }
 
-      res.json({ predictions });
+      res.json({ 
+        predictions,
+        summary: {
+          highRiskDevices: highRiskCount,
+          mediumRiskDevices: mediumRiskCount,
+          lowRiskDevices: lowRiskCount,
+          totalDevices: predictions.length,
+          recommendedActions
+        },
+        generatedAt: new Date().toISOString()
+      });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
@@ -1341,29 +1377,63 @@ export function registerRoutes(app: express.Express) {
     try {
       const now = new Date();
       const dayOfWeek = now.getDay();
-      const currentHour = now.getHours();
 
       // Simple traffic predictions based on time
       const predictions: any[] = [];
+      let peakHour = "18:00";
+      let peakVisitors = 0;
+      let totalPredictedVisitors = 0;
+      const insights: string[] = [];
+
       for (let i = 0; i < 24; i++) {
-        let expectedLoad = 30; // Base load
+        let predictedVisitors = 5; // Base visitors
         
-        // Peak hours
-        if (i >= 16 && i <= 22) expectedLoad = 80;
-        else if (i >= 10 && i <= 15) expectedLoad = 50;
-        else if (i >= 23 || i <= 6) expectedLoad = 15;
+        // Peak hours (evening gaming time)
+        if (i >= 16 && i <= 22) predictedVisitors = 15 + Math.floor(Math.random() * 5);
+        else if (i >= 10 && i <= 15) predictedVisitors = 8 + Math.floor(Math.random() * 3);
+        else if (i >= 23 || i <= 6) predictedVisitors = 2;
         
         // Weekend boost
-        if (dayOfWeek === 0 || dayOfWeek === 6) expectedLoad = Math.min(100, expectedLoad * 1.3);
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+          predictedVisitors = Math.round(predictedVisitors * 1.3);
+        }
+
+        // Determine confidence level
+        let confidence: "low" | "medium" | "high" = "medium";
+        if (i >= 16 && i <= 20) confidence = "high";
+        else if (i >= 23 || i <= 8) confidence = "low";
+
+        if (predictedVisitors > peakVisitors) {
+          peakVisitors = predictedVisitors;
+          peakHour = `${i.toString().padStart(2, '0')}:00`;
+        }
+        totalPredictedVisitors += predictedVisitors;
 
         predictions.push({
           hour: `${i.toString().padStart(2, '0')}:00`,
-          expectedLoad: Math.round(expectedLoad),
-          confidence: 0.75
+          predictedVisitors,
+          confidence
         });
       }
 
-      res.json({ predictions, currentHour });
+      // Generate insights
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        insights.push("Weekend traffic expected to be 30% higher than weekdays");
+      }
+      insights.push(`Peak traffic expected around ${peakHour} with approximately ${peakVisitors} visitors`);
+      insights.push("Consider additional staffing during evening hours (4 PM - 10 PM)");
+
+      res.json({ 
+        predictions,
+        summary: {
+          peakHour,
+          peakVisitors,
+          totalPredictedVisitors,
+          averageVisitors: Math.round(totalPredictedVisitors / 24),
+          insights
+        },
+        generatedAt: new Date().toISOString()
+      });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
