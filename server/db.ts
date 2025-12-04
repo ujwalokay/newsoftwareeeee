@@ -38,7 +38,7 @@ function initializeSqliteSchema(sqliteDb: Database.Database) {
       group_code TEXT UNIQUE,
       group_name TEXT NOT NULL,
       category TEXT NOT NULL,
-      booking_type TEXT NOT NULL,
+      booking_type TEXT NOT NULL DEFAULT '[]',
       created_at INTEGER NOT NULL
     );
 
@@ -56,19 +56,19 @@ function initializeSqliteSchema(sqliteDb: Database.Database) {
       end_time INTEGER NOT NULL,
       price TEXT NOT NULL,
       status TEXT NOT NULL,
-      booking_type TEXT NOT NULL,
+      booking_type TEXT NOT NULL DEFAULT '[]',
       paused_remaining_time INTEGER,
       person_count INTEGER NOT NULL DEFAULT 1,
       payment_method TEXT,
       cash_amount TEXT,
       upi_amount TEXT,
       payment_status TEXT NOT NULL DEFAULT 'unpaid',
-      last_payment_action TEXT,
-      food_orders TEXT DEFAULT '[]',
+      last_payment_action TEXT DEFAULT 'null',
+      food_orders TEXT NOT NULL DEFAULT '[]',
       original_price TEXT,
       discount_applied TEXT,
       bonus_hours_applied TEXT,
-      promotion_details TEXT,
+      promotion_details TEXT DEFAULT 'null',
       is_promotional_discount INTEGER DEFAULT 0,
       is_promotional_bonus INTEGER DEFAULT 0,
       manual_discount_percentage INTEGER,
@@ -109,6 +109,7 @@ function initializeSqliteSchema(sqliteDb: Database.Database) {
       count INTEGER NOT NULL DEFAULT 0,
       seats TEXT NOT NULL DEFAULT '[]'
     );
+    CREATE UNIQUE INDEX IF NOT EXISTS device_configs_category_idx ON device_configs(category);
 
     CREATE TABLE IF NOT EXISTS pricing_configs (
       id TEXT PRIMARY KEY,
@@ -149,19 +150,19 @@ function initializeSqliteSchema(sqliteDb: Database.Database) {
       end_time INTEGER NOT NULL,
       price TEXT NOT NULL,
       status TEXT NOT NULL,
-      booking_type TEXT NOT NULL,
+      booking_type TEXT NOT NULL DEFAULT '[]',
       paused_remaining_time INTEGER,
       person_count INTEGER NOT NULL DEFAULT 1,
       payment_method TEXT,
       cash_amount TEXT,
       upi_amount TEXT,
       payment_status TEXT NOT NULL DEFAULT 'unpaid',
-      last_payment_action TEXT,
-      food_orders TEXT DEFAULT '[]',
+      last_payment_action TEXT DEFAULT 'null',
+      food_orders TEXT NOT NULL DEFAULT '[]',
       original_price TEXT,
       discount_applied TEXT,
       bonus_hours_applied TEXT,
-      promotion_details TEXT,
+      promotion_details TEXT DEFAULT 'null',
       is_promotional_discount INTEGER DEFAULT 0,
       is_promotional_bonus INTEGER DEFAULT 0,
       manual_discount_percentage INTEGER,
@@ -269,7 +270,7 @@ function initializeSqliteSchema(sqliteDb: Database.Database) {
       horizon TEXT NOT NULL,
       predicted_load INTEGER NOT NULL,
       model_version TEXT NOT NULL,
-      features TEXT DEFAULT '{}'
+      features TEXT NOT NULL DEFAULT '{}'
     );
 
     CREATE TABLE IF NOT EXISTS retention_config (
